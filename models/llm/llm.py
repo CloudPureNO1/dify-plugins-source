@@ -35,6 +35,20 @@ class INSIGMAAILanguageModel(OAICompatLargeLanguageModel):
     INSIGMAAI 大语言模型适配器
     实现了与 OpenAI API 兼容的第三方模型接入，支持 chat/completion 模式。
     继承自 OAICompatLargeLanguageModel，复用 OpenAI 标准调用逻辑。
+
+    @author: wangsm(cloudpureno1)
+    @date: 2025-07-15
+    @version: v1.0
+ 
+    功能：
+    - 适配 INSIGMAAI 的语音合成服务
+    - 兼容 OpenAI 风格的 chat/completion 模式 API 接口 
+    - 支持通过自定义 endpoint 接入模型
+
+    设计思路：
+    - 继承自 Dify 的 OAI 兼容 TTS 基类（OAICompatLargeLanguageModel）
+    - 子类仅负责：endpoint 标准化、接口桥接 、凭证校验
+    - 实际的模型求由父类完成，复用标准逻辑
     """
 
     def _invoke(
@@ -69,7 +83,7 @@ class INSIGMAAILanguageModel(OAICompatLargeLanguageModel):
         model = model.strip()
         
         # 获取兼容格式的凭证（如标准化 endpoint_url）
-        compatible_credentials = self._get_compatible_credentials(credentials)
+        compatible_credentials = self._standardize_endpoint_url(credentials)
         
         # 从参数中提取 enable_thinking 配置（前端传入）
         enable_thinking = model_parameters.pop("enable_thinking", None)
@@ -104,7 +118,7 @@ class INSIGMAAILanguageModel(OAICompatLargeLanguageModel):
         """
         try:
             # 获取标准化后的凭证（如自动补全 /v1 路径）
-            credentials = self._get_compatible_credentials(credentials)
+            credentials = self._standardize_endpoint_url(credentials)
             
             # 构建请求头
             headers = {"Content-Type": "application/json"}
@@ -118,7 +132,7 @@ class INSIGMAAILanguageModel(OAICompatLargeLanguageModel):
                 endpoint_url += "/"  # 确保以斜杠结尾，避免 urljoin 出错
 
             # 准备验证请求的 payload 数据
-            data = {"model": model, "max_tokens": 50}  # 最多生成 50 token
+            data = {"model": model, "max_tokens": 70}  # 最多生成 70 token
             
             # 判断调用模式（chat 或 completion）
             completion_type = LLMMode.value_of(credentials["mode"])
@@ -132,7 +146,7 @@ class INSIGMAAILanguageModel(OAICompatLargeLanguageModel):
                 data["prompt"] = "ping"
                 endpoint_url = urljoin(endpoint_url, "completions")
             else:
-                raise ValueError("Unsupported completion type for model configuration.")
+                raise ValueError(f"completion_type '{completion_type}' 不被支持。请使用 'chat' 或 'completion' 等有效类型。")
 
             # 发送 POST 请求进行验证
             response = requests.post(
@@ -149,7 +163,7 @@ class INSIGMAAILanguageModel(OAICompatLargeLanguageModel):
             # HTTP 状态码非200视为验证失败
             if response.status_code != 200:
                 raise CredentialsValidateFailedError(
-                    f"Credentials validation failed with status code {response.status_code}"
+                   f"凭证验证失败，状态码：{response.status_code}"
                 )
 
             # JSON 解析失败，但 HTTP 状态码为 200，仍视为验证通过
@@ -161,7 +175,7 @@ class INSIGMAAILanguageModel(OAICompatLargeLanguageModel):
         # 捕获其他所有异常，统一包装为 CredentialsValidateFailedError 返回
         except Exception as ex:
             raise CredentialsValidateFailedError(
-                f"An error occurred during credentials validation: {str(ex)}"
+                f"凭证验证失败: {str(ex)}"
             ) from ex
 
     def _add_custom_parameters(self, credentials: dict) -> None:
@@ -174,10 +188,10 @@ class INSIGMAAILanguageModel(OAICompatLargeLanguageModel):
         """
         credentials["mode"] = "chat"
 
-    def _get_compatible_credentials(self, credentials: dict) -> dict:
+    def _standardize_endpoint_url(self, credentials: dict) -> dict:
         """
         标准化凭证中的 endpoint_url。
-        去除可能的版本路径（如 /v1, /v1-openai 等），然后统一加上 '/v1'。
+        去除可能的版本路径（如 /v1, /v1-openai，/openai-v1 等），然后统一加上 '/v1'。
         确保与 OpenAI API 格式兼容。
 
         参数:
