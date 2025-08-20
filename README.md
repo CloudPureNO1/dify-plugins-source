@@ -9,7 +9,7 @@
 - **名称**：insigmaai
 - **显示名**：InsigmaAI
 - **作者**：[CloudPureNO1](https://github.com/CloudPureNO1)
-- **版本**：0.0.1
+- **版本**：0.0.2
 - **语言**：Python 3.12
 - **架构**：amd64 / arm64
 - **类型**：Dify Plugin
@@ -72,6 +72,18 @@ GitHub: [CloudPureNO1](https://github.com/CloudPureNO1)
 Email: [CloudPure@163.com](CloudPure@163.com)
 
 欢迎提交 Issue 或 PR！
+
+
+
+## 📝 更新日志
+
+### v0.0.2
+- 添加 Vision 视觉等支持
+
+### v0.0.1
+- 初始版本发布
+- 支持LLM、文本嵌入、语音转文本、文本转语音、重排序功能
+
 
 ## 许可证
 本插件开源，遵循 MIT License（如适用）。
