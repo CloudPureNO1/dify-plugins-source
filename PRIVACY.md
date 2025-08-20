@@ -2,8 +2,8 @@
 
 > **插件名称**：InsigmaAI（insigmaai）  
 > **开发者**：[CloudPureNO1](https://github.com/CloudPureNO1)  
-> **生效日期**：2025年8月12日  
-> **文档版本**：0.0.1  
+> **生效日期**：2025年8月20日  
+> **文档版本**：0.0.2 
 > **适用平台**：Dify AI 插件平台
 
 ---
